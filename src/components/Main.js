@@ -6,12 +6,13 @@ import Register from "./Register";
 import Landing from "./Landing";
 import Collection from "./Collection";
 
-// Responsive app / mobile responsive design
-
 function Main(props) {
   const { isLoggedIn, handleLoggedIn } = props;
 
-  // auth gating
+  const requireAuth = (component) => {
+    return isLoggedIn ? component : <Navigate to="/login" />;
+  };
+
   const showLogin = () => {
     return isLoggedIn ? <Landing /> : <Login handleLoggedIn={handleLoggedIn} />;
   };
@@ -20,17 +21,14 @@ function Main(props) {
     return isLoggedIn ? <Landing /> : <Register />;
   };
 
-  const showCollection = () => {
-    return isLoggedIn ? <Collection /> : <Navigate to="/login" />;
-  };
-
   return (
     <div className="main">
       <Routes>
-        <Route path="/" exact element={showLogin()} />
+        <Route path="/" element={showLogin()} />
+        <Route path="/create" element={requireAuth(<Landing />)} />
         <Route path="/register" element={showRegister()} />
         <Route path="/login" element={showLogin()} />
-        <Route path="/collection" element={showCollection()} />
+        <Route path="/collection" element={requireAuth(<Collection />)} />
       </Routes>
     </div>
   );

@@ -28,7 +28,7 @@ class CreatePostButton extends Component {
         if (postType) {
           let formData = new FormData();
           formData.append("message", description);
-          formData.append("message_file", originFileObj);
+          formData.append("media_file", originFileObj);
 
           const opt = {
             method: "POST",
@@ -41,7 +41,7 @@ class CreatePostButton extends Component {
 
           axios(opt)
             .then((response) => {
-              if (response.status === 200) {
+              if (response.status === 200 || response.status === 201) {
                 message.success("Post created successfully");
                 this.postForm.resetFields();
                 this.handleCancel();

@@ -32,7 +32,7 @@ function Register(props) {
     const option = {
       method: "POST",
       url: `${BASE_URL}/signup`,
-      data: { username, password },
+      data: { user_id: username, password },
       headers: {
         "Content-Type": "application/json",
       },
@@ -41,7 +41,7 @@ function Register(props) {
     axios(option)
       .then((response) => {
         console.log("Response from server: ", response);
-        if (response.status === 200) {
+        if (response.status === 200 || response.status === 201) {
           message.success("Register successful!");
           navigate("/login");
         }

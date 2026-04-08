@@ -1,8 +1,4 @@
-import React, { useState, useEffect } from "react";
-
-import PhotoAlbum from "react-photo-album";
-import Lightbox from "yet-another-react-lightbox";
-import OpenAI from "openai";
+import React, { useState } from "react";
 
 import styled from "styled-components";
 import Typography from "@mui/material/Typography";
@@ -10,11 +6,12 @@ import Paper from "@mui/material/Paper";
 import InputBase from "@mui/material/InputBase";
 import IconButton from "@mui/material/IconButton";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import FileUploadRoundedIcon from "@mui/icons-material/FileUploadRounded";
-import { BASE_URL, TOKEN_KEY } from "../constants";
-import axios from "axios";
-import { message } from "antd";
 import { CircularProgress } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { message, Card, Image, Button } from "antd";
+import axios from "axios";
+
+import { BASE_URL, TOKEN_KEY } from "../constants";
 
 const Overlay = styled.div`
   position: fixed;
@@ -37,91 +34,54 @@ const MainContainer = styled.div`
 
 const HeaderContainer = styled.div`
   display: flex;
-  justify-content: column;
+  flex-direction: column;
   align-items: center;
 `;
 
-function Landing(props) {
-  const [index, setIndex] = useState(-1);
+const ResultContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 64px;
+`;
+
+function Landing() {
   const [inputValue, setInputValue] = useState("");
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [generatedImageUrl, setGeneratedImageUrl] = useState();
-  const [slicedPhotos, setSlicedPhotos] = useState();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedPost, setGeneratedPost] = useState(null);
+  const navigate = useNavigate();
 
-  const openai = new OpenAI({
-    apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-    dangerouslyAllowBrowser: true,
-  });
-
-  useEffect(() => {
-    if (Boolean(generatedImageUrl)) {
-      setSlicedPhotos([
+  const handleGenerate = async () => {
+    if (!inputValue.trim()) {
+      message.warning("Please enter a description");
+      return;
+    }
+    setIsGenerating(true);
+    setGeneratedPost(null);
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/post/generate-image-from-openai`,
+        { prompt: inputValue },
         {
-          src: generatedImageUrl,
-          width: 200,
-          height: 200,
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
+            "Content-Type": "application/json",
+          },
         },
-      ]);
-    }
-  }, [generatedImageUrl]);
-
-  const createImage = async () => {
-    try {
-      setIsGeneratingImage(true);
-      const response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: inputValue,
-        n: 1,
-        size: "1024x1024",
-      });
-      const imageUrl = response.data[0].url;
-      setGeneratedImageUrl(imageUrl);
-    } catch (error) {
-      message.error("Failed to generate image");
-    } finally {
-      setIsGeneratingImage(false);
-    }
-  };
-
-  const handleInputChange = (event) => {
-    setInputValue(event.target.value);
-  };
-
-  const handleUploadImage = async () => {
-    try {
-      const fetchResponse = await fetch(
-        generatedImageUrl.replace(/https:\/\/[^/]+/, "/api")
       );
-      const blob = await fetchResponse.blob();
-      const file = new File([blob], "image.png", { type: "image/png" });
-      const formData = new FormData();
-      formData.append("message", "AI Generated Image");
-      formData.append("message_file", file);
-
-      const uploadResponse = await axios({
-        method: "POST",
-        url: `${BASE_URL}/upload`,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
-        },
-        data: formData,
-      });
-
-      if (uploadResponse.status === 200) {
-        message.success("Image uploaded successfully");
-      } else {
-        message.error("Failed to upload image");
+      if (response.status === 200 || response.status === 201) {
+        setGeneratedPost(response.data);
+        message.success("Image generated and published!");
       }
     } catch (error) {
-      message.error("Failed to upload image");
+      message.error("Failed to generate image, please try again");
     } finally {
-      setIndex(-1);
+      setIsGenerating(false);
     }
   };
 
   return (
     <MainContainer>
-      {isGeneratingImage && (
+      {isGenerating && (
         <Overlay>
           <CircularProgress color="info" size={100} />
         </Overlay>
@@ -147,7 +107,6 @@ function Landing(props) {
           fontSize="1.2rem"
           component="div"
           sx={{
-            mr: 2,
             fontFamily: "Roboto",
             color: "white",
             textDecoration: "none",
@@ -160,6 +119,10 @@ function Landing(props) {
 
         <Paper
           component="form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleGenerate();
+          }}
           sx={{
             p: "2px 4px",
             display: "flex",
@@ -175,42 +138,54 @@ function Landing(props) {
             multiline
             sx={{ ml: 1, flex: 1 }}
             placeholder="Enter a detailed description of the photo you want to create..."
-            inputProps={{ "aria-label": "search" }}
+            inputProps={{ "aria-label": "prompt" }}
             value={inputValue}
-            onChange={handleInputChange}
+            onChange={(e) => setInputValue(e.target.value)}
           />
-          <IconButton
-            type="button"
-            sx={{ p: "10px" }}
-            onClick={() => createImage()}
-          >
+          <IconButton type="submit" sx={{ p: "10px" }} disabled={isGenerating}>
             <ArrowForwardIcon />
           </IconButton>
         </Paper>
       </HeaderContainer>
-      <PhotoAlbum
-        photos={slicedPhotos}
-        layout="rows"
-        onClick={({ index }) => setIndex(index)}
-      />
-      <Lightbox
-        open={index >= 0}
-        index={index}
-        close={() => setIndex(-1)}
-        slides={slicedPhotos}
-        toolbar={{
-          buttons: [
-            <IconButton
-              key="upload"
-              type="button"
-              sx={{ p: "10px" }}
-              onClick={() => handleUploadImage()}
-            >
-              <FileUploadRoundedIcon sx={{ color: "white" }} />
-            </IconButton>,
-          ],
-        }}
-      />
+
+      {generatedPost && (
+        <ResultContainer>
+          <Card
+            style={{ maxWidth: 600, width: "100%", borderRadius: 12 }}
+            cover={
+              <Image
+                alt={generatedPost.message}
+                src={generatedPost.url}
+                style={{ maxHeight: 512, objectFit: "contain" }}
+              />
+            }
+            actions={[
+              <Button
+                key="collection"
+                type="link"
+                onClick={() => navigate("/collection")}
+              >
+                View in Collection
+              </Button>,
+              <Button
+                key="new"
+                type="link"
+                onClick={() => {
+                  setGeneratedPost(null);
+                  setInputValue("");
+                }}
+              >
+                Generate Another
+              </Button>,
+            ]}
+          >
+            <Card.Meta
+              title="AI Generated Image"
+              description={generatedPost.message}
+            />
+          </Card>
+        </ResultContainer>
+      )}
     </MainContainer>
   );
 }

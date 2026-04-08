@@ -14,7 +14,7 @@ function Login(props) {
       method: "POST",
       url: `${BASE_URL}/signin`,
       data: {
-        username,
+        user_id: username,
         password,
       },
       headers: {
@@ -24,8 +24,7 @@ function Login(props) {
     axios(option)
       .then((response) => {
         if (response.status === 200) {
-          const { data } = response;
-          handleLoggedIn(data);
+          handleLoggedIn(response.data.token);
           message.success("Login successful!");
         }
       })

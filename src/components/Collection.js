@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Tabs, message, Row, Col } from "antd";
+import { Tabs, message, Row, Col, Empty } from "antd";
 
 import SearchBar from "./SearchBar";
 import { SEARCH_KEY, BASE_URL, TOKEN_KEY } from "../constants";
-import PhotoGallery from "./PhotoGallery";
+import PostCard from "./PostCard";
 import CreatePostButton from "./CreatePostButton";
 
-const { TabPane } = Tabs;
-
-function Collection(props) {
+function Collection() {
   const [searchOption, setSearchOption] = useState({
     type: SEARCH_KEY.all,
     keywords: "",
@@ -25,30 +23,26 @@ function Collection(props) {
     fetchPosts(searchOption);
   }, [searchOption]);
 
-  const fetchPosts = (searchOption) => {
-    const { type, keywords } = searchOption;
-    let url = "";
+  const fetchPosts = ({ type, keywords }) => {
+    let url = `${BASE_URL}/search`;
 
-    if (type === SEARCH_KEY.all) {
-      url = `${BASE_URL}/search`;
-    } else if (type === SEARCH_KEY.keywords) {
-      url = `${BASE_URL}/search?keywords=${keywords}`;
-    } else if (type === SEARCH_KEY.user) {
-      url = `${BASE_URL}/search?user=${keywords}`;
+    if (type === SEARCH_KEY.keywords && keywords) {
+      url += `?keywords=${encodeURIComponent(keywords)}`;
+    } else if (type === SEARCH_KEY.user && keywords) {
+      url += `?user_id=${encodeURIComponent(keywords)}`;
+    } else if (type === SEARCH_KEY.semantic && keywords) {
+      url += `?mode=semantic&keywords=${encodeURIComponent(keywords)}`;
     }
 
-    const searchOptions = {
-      method: "GET",
-      url: url,
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
-      },
-    };
-
-    axios(searchOptions)
+    axios
+      .get(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
+        },
+      })
       .then((response) => {
         if (response.status === 200) {
-          setPosts(response.data);
+          setPosts(response.data?.posts || []);
         }
       })
       .catch(() => {
@@ -56,59 +50,34 @@ function Collection(props) {
       });
   };
 
+  const handleDeletePost = (postId) => {
+    setPosts((prev) => prev.filter((p) => p.post_id !== postId));
+  };
+
   const renderPosts = (type) => {
-    if (!posts || posts.length === 0) {
-      return <div>No posts found</div>;
+    const filteredPosts = posts.filter((post) => post.type === type);
+
+    if (!filteredPosts || filteredPosts.length === 0) {
+      return <Empty description={`No ${type}s found`} />;
     }
 
-    let filteredPosts;
-    if (type === "image") {
-      filteredPosts = posts.filter((post) => post.type === "image");
-      if (!filteredPosts || filteredPosts.length === 0) {
-        return <div>No images found</div>;
-      }
-      const imageArr = filteredPosts.map((image) => {
-        return {
-          postId: image.postId,
-          src: image.url,
-          user: image.user,
-          caption: image.message,
-          thumbnail: image.url,
-          thumbnailWidth: 300,
-          thumbnailHeight: 200,
-        };
-      });
-      return <PhotoGallery images={imageArr} />;
-    } else if (type === "video") {
-      filteredPosts = posts.filter((post) => post.type === "video");
-      if (!filteredPosts || filteredPosts.length === 0) {
-        return <div>No videos found</div>;
-      }
-      return (
-        <Row>
-          {filteredPosts.map((post) => {
-            return (
-              <Col span={24} key={post.url}>
-                <video src={post.url} controls={true} />
-              </Col>
-            );
-          })}
-        </Row>
-      );
-    }
+    return (
+      <Row gutter={[16, 16]}>
+        {filteredPosts.map((post) => (
+          <Col xs={24} sm={12} lg={8} key={post.post_id}>
+            <PostCard post={post} onDelete={handleDeletePost} />
+          </Col>
+        ))}
+      </Row>
+    );
   };
 
   const showPost = (postType) => {
     setActiveTab(postType);
     setTimeout(() => {
-      setSearchOption({
-        type: SEARCH_KEY.all,
-        keywords: "",
-      });
+      setSearchOption({ type: SEARCH_KEY.all, keywords: "" });
     }, 3000);
   };
-
-  const operations = <CreatePostButton onShowPost={showPost} />;
 
   return (
     <div className="home">
@@ -118,15 +87,12 @@ function Collection(props) {
           onChange={(key) => setActiveTab(key)}
           defaultActiveKey="image"
           activeKey={activeTab}
-          tabBarExtraContent={operations}
-        >
-          <TabPane tab="Image" key="image">
-            {renderPosts("image")}
-          </TabPane>
-          <TabPane tab="Video" key="video">
-            {renderPosts("video")}
-          </TabPane>
-        </Tabs>
+          tabBarExtraContent={<CreatePostButton onShowPost={showPost} />}
+          items={[
+            { key: "image", label: "Image", children: renderPosts("image") },
+            { key: "video", label: "Video", children: renderPosts("video") },
+          ]}
+        />
       </div>
     </div>
   );

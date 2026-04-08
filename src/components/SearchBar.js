@@ -31,10 +31,20 @@ const SearchBar = (props) => {
     });
   };
 
+  const getPlaceholder = () => {
+    if (searchType === SEARCH_KEY.semantic) {
+      return "Describe what you're looking for...";
+    }
+    if (searchType === SEARCH_KEY.user) {
+      return "Enter user ID";
+    }
+    return "Enter your search keyword";
+  };
+
   return (
     <div className="search-bar">
       <Search
-        placeholder="Enter your search keyword"
+        placeholder={getPlaceholder()}
         enterButton="Search"
         size="large"
         onSearch={handleSearch}
@@ -49,6 +59,7 @@ const SearchBar = (props) => {
         <Radio value={SEARCH_KEY.all}>All</Radio>
         <Radio value={SEARCH_KEY.keywords}>Keywords</Radio>
         <Radio value={SEARCH_KEY.user}>User</Radio>
+        <Radio value={SEARCH_KEY.semantic}>Semantic</Radio>
       </Radio.Group>
     </div>
   );

@@ -66,7 +66,7 @@ const PhotoGallery = (props) => {
       });
       const options = {
         method: "DELETE",
-        url: `${BASE_URL}/posts/${postId}`,
+        url: `${BASE_URL}/post/${postId}`,
         headers: {
           Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
         },
