@@ -1,34 +1,35 @@
 import React, { useState } from "react";
 import { Input, Radio } from "antd";
+import type { RadioChangeEvent } from "antd";
 import { SEARCH_KEY } from "../constants";
+import type { SearchKeyType } from "../constants";
 
 const { Search } = Input;
 
-const SearchBar = (props) => {
-  const [searchType, setSearchType] = useState(SEARCH_KEY.all);
+interface SearchBarProps {
+  handleSearch: (option: { type: SearchKeyType; keywords: string }) => void;
+}
+
+function SearchBar({ handleSearch }: SearchBarProps) {
+  const [searchType, setSearchType] = useState<SearchKeyType>(SEARCH_KEY.all);
   const [error, setError] = useState("");
 
-  const changeSearchType = (e) => {
-    const userValue = e.target.value;
+  const changeSearchType = (e: RadioChangeEvent) => {
+    const userValue = e.target.value as SearchKeyType;
     setSearchType(userValue);
     setError("");
     if (userValue === SEARCH_KEY.all) {
-      props.handleSearch({
-        type: userValue,
-        keywords: "",
-      });
+      handleSearch({ type: userValue, keywords: "" });
     }
   };
-  const handleSearch = (value) => {
+
+  const onSearch = (value: string) => {
     if (searchType !== SEARCH_KEY.all && value === "") {
       setError("Please enter a search keyword");
       return;
     }
     setError("");
-    props.handleSearch({
-      type: searchType,
-      keywords: value,
-    });
+    handleSearch({ type: searchType, keywords: value });
   };
 
   const getPlaceholder = () => {
@@ -47,7 +48,7 @@ const SearchBar = (props) => {
         placeholder={getPlaceholder()}
         enterButton="Search"
         size="large"
-        onSearch={handleSearch}
+        onSearch={onSearch}
         disabled={searchType === SEARCH_KEY.all}
       />
       <p className="error-message">{error}</p>
@@ -63,6 +64,6 @@ const SearchBar = (props) => {
       </Radio.Group>
     </div>
   );
-};
+}
 
 export default SearchBar;

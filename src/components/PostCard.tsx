@@ -10,11 +10,17 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import { BASE_URL, TOKEN_KEY } from "../constants";
+import type { Post } from "../types/model";
 import CommentSection from "./CommentSection";
 
 const { Paragraph } = Typography;
 
-function PostCard({ post, onDelete }) {
+interface PostCardProps {
+  post: Post;
+  onDelete?: (postId: string) => void;
+}
+
+function PostCard({ post, onDelete }: PostCardProps) {
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
   const [shareCount, setShareCount] = useState(post.shared_count || 0);
   const [liked, setLiked] = useState(false);
@@ -35,7 +41,7 @@ function PostCard({ post, onDelete }) {
         setLiked(true);
         setLikeCount((prev) => prev + 1);
       })
-      .catch((error) => {
+      .catch((error: any) => {
         if (error.response?.status === 409) {
           setLiked(true);
           message.info("You already liked this post");

@@ -3,32 +3,33 @@ import { Form, Input, Button, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import axios from "axios";
-
 import { BASE_URL } from "../constants";
+import type { SigninResponse } from "../types/model";
 
-function Login(props) {
-  const { handleLoggedIn } = props;
-  const onFinish = (values) => {
+interface LoginProps {
+  handleLoggedIn: (token: string) => void;
+}
+
+interface LoginFormValues {
+  username: string;
+  password: string;
+}
+
+function Login({ handleLoggedIn }: LoginProps) {
+  const onFinish = (values: LoginFormValues) => {
     const { username, password } = values;
-    const option = {
-      method: "POST",
-      url: `${BASE_URL}/signin`,
-      data: {
+    axios
+      .post<SigninResponse>(`${BASE_URL}/signin`, {
         user_id: username,
         password,
-      },
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
-    axios(option)
+      })
       .then((response) => {
         if (response.status === 200) {
           handleLoggedIn(response.data.token);
           message.success("Login successful!");
         }
       })
-      .catch((error) => {
+      .catch(() => {
         message.error("Login failed, please try again");
       });
   };
@@ -64,4 +65,5 @@ function Login(props) {
     </Form>
   );
 }
+
 export default Login;

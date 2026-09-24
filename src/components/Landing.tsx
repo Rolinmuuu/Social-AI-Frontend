@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 import styled from "styled-components";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
@@ -10,8 +9,8 @@ import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { message, Card, Image, Button } from "antd";
 import axios from "axios";
-
 import { BASE_URL, TOKEN_KEY } from "../constants";
+import type { Post } from "../types/model";
 
 const Overlay = styled.div`
   position: fixed;
@@ -47,7 +46,7 @@ const ResultContainer = styled.div`
 function Landing() {
   const [inputValue, setInputValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedPost, setGeneratedPost] = useState(null);
+  const [generatedPost, setGeneratedPost] = useState<Post | null>(null);
   const navigate = useNavigate();
 
   const handleGenerate = async () => {
@@ -58,7 +57,7 @@ function Landing() {
     setIsGenerating(true);
     setGeneratedPost(null);
     try {
-      const response = await axios.post(
+      const response = await axios.post<Post>(
         `${BASE_URL}/post/generate-image-from-openai`,
         { prompt: inputValue },
         {
@@ -72,7 +71,7 @@ function Landing() {
         setGeneratedPost(response.data);
         message.success("Image generated and published!");
       }
-    } catch (error) {
+    } catch {
       message.error("Failed to generate image, please try again");
     } finally {
       setIsGenerating(false);
@@ -93,11 +92,7 @@ function Landing() {
           marginTop="128px"
           noWrap
           component="div"
-          sx={{
-            fontFamily: "Roboto",
-            color: "white",
-            textDecoration: "none",
-          }}
+          sx={{ fontFamily: "Roboto", color: "white" }}
         >
           Social AI
         </Typography>
@@ -109,7 +104,6 @@ function Landing() {
           sx={{
             fontFamily: "Roboto",
             color: "white",
-            textDecoration: "none",
             margin: "0 20px",
             textAlign: "center",
           }}
@@ -119,7 +113,7 @@ function Landing() {
 
         <Paper
           component="form"
-          onSubmit={(e) => {
+          onSubmit={(e: React.FormEvent) => {
             e.preventDefault();
             handleGenerate();
           }}

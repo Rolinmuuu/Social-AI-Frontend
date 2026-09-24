@@ -14,24 +14,29 @@ import PublicIcon from "@mui/icons-material/Public";
 import LogOutIcon from "@mui/icons-material/Logout";
 
 const pages = ["Create", "Collection"];
-// use json file to store the pages
-// for different languages
-// rather than hardcoding "Create" and "Collection"
 
-function ResponsiveAppBar(props) {
-  const { isLoggedIn, handleLogout } = props;
-  const [anchorElNav, setAnchorElNav] = useState(null);
+interface ResponsiveAppBarProps {
+  isLoggedIn: boolean;
+  handleLogout: () => void;
+}
+
+function ResponsiveAppBar({ isLoggedIn, handleLogout }: ResponsiveAppBarProps) {
+  const [anchorElNav, setAnchorElNav] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
-  const handleOpenNavMenu = (event) => {
+
+  const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElNav(event.currentTarget);
   };
+
   const handleCloseNavMenu = () => {
     setAnchorElNav(null);
   };
-  const handleNavigate = (page) => {
+
+  const handleNavigate = (page: string) => {
     navigate(`/${page.toLowerCase()}`);
     handleCloseNavMenu();
   };
+
   return (
     <AppBar
       position="static"
@@ -65,9 +70,6 @@ function ResponsiveAppBar(props) {
 
           {isLoggedIn && (
             <>
-              {/* 以下两个 box 是用来显示菜单按钮的 */}
-              {/* 第一个 box 是用来显示小屏幕的菜单按钮 */}
-              {/* 第二个 box 是用来显示大屏幕的菜单按钮 */}
               <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
                 <IconButton
                   size="large"
@@ -79,31 +81,20 @@ function ResponsiveAppBar(props) {
                 <Menu
                   id="menu-appbar"
                   anchorEl={anchorElNav}
-                  anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "left",
-                  }}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                   keepMounted
-                  transformOrigin={{
-                    vertical: "top",
-                    horizontal: "left",
-                  }}
+                  transformOrigin={{ vertical: "top", horizontal: "left" }}
                   open={Boolean(anchorElNav)}
                   onClose={handleCloseNavMenu}
-                  sx={{
-                    display: { xs: "block", md: "none" },
-                  }}
+                  sx={{ display: { xs: "block", md: "none" } }}
                 >
-                  {pages.map((page) => {
-                    return (
-                      <MenuItem key={page} onClick={() => handleNavigate(page)}>
-                        <Typography textAlign="center">{page}</Typography>
-                      </MenuItem>
-                    );
-                  })}
+                  {pages.map((page) => (
+                    <MenuItem key={page} onClick={() => handleNavigate(page)}>
+                      <Typography textAlign="center">{page}</Typography>
+                    </MenuItem>
+                  ))}
                 </Menu>
               </Box>
-              {/* 这是第二个 box，用来显示大屏幕的菜单按钮 */}
               <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
                 {pages.map((page) => (
                   <Button
@@ -115,7 +106,6 @@ function ResponsiveAppBar(props) {
                   </Button>
                 ))}
               </Box>
-              {/* 这个 box 是用来 Logout 的 */}
               <Box sx={{ flexGrow: 0 }}>
                 <Button
                   variant="outlined"

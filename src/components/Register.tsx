@@ -6,48 +6,35 @@ import "../styles/Register.css";
 import { BASE_URL } from "../constants";
 
 const formItemLayout = {
-  labelCol: {
-    xs: { span: 24 },
-    sm: { span: 8 },
-  },
-  wrapperCol: {
-    xs: { span: 24 },
-    sm: { span: 16 },
-  },
+  labelCol: { xs: { span: 24 }, sm: { span: 8 } },
+  wrapperCol: { xs: { span: 24 }, sm: { span: 16 } },
 };
 
 const tailFormItemLayout = {
-  wrapperCol: {
-    xs: { span: 16, offset: 0 },
-    sm: { span: 16, offset: 8 },
-  },
+  wrapperCol: { xs: { span: 16, offset: 0 }, sm: { span: 16, offset: 8 } },
 };
 
-function Register(props) {
+interface RegisterFormValues {
+  username: string;
+  password: string;
+  confirm: string;
+}
+
+function Register() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
-  const onFinish = (values) => {
-    console.log("Received values of form: ", values);
-    const { username, password } = values;
-    const option = {
-      method: "POST",
-      url: `${BASE_URL}/signup`,
-      data: { user_id: username, password },
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
 
-    axios(option)
+  const onFinish = (values: RegisterFormValues) => {
+    const { username, password } = values;
+    axios
+      .post(`${BASE_URL}/signup`, { user_id: username, password })
       .then((response) => {
-        console.log("Response from server: ", response);
         if (response.status === 200 || response.status === 201) {
           message.success("Register successful!");
           navigate("/login");
         }
       })
-      .catch((error) => {
-        console.log("Error from server: ", error);
+      .catch(() => {
         message.error("Register went wrong, please try again");
       });
   };
@@ -82,18 +69,14 @@ function Register(props) {
         hasFeedback
         rules={[
           { required: true, message: "Please confirm your password!" },
-          ({ getFieldValue }) => {
-            return {
-              validator(rules, value) {
-                if (!value || getFieldValue("password") === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(
-                  new Error("The two passwords do not match!"),
-                );
-              },
-            };
-          },
+          ({ getFieldValue }) => ({
+            async validator(_: unknown, value: string) {
+              if (!value || getFieldValue("password") === value) {
+                return;
+              }
+              throw new Error("The two passwords do not match!");
+            },
+          }),
         ]}
       >
         <Input.Password />

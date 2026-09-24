@@ -1,15 +1,17 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-
 import Login from "./Login";
 import Register from "./Register";
 import Landing from "./Landing";
 import Collection from "./Collection";
 
-function Main(props) {
-  const { isLoggedIn, handleLoggedIn } = props;
+interface MainProps {
+  isLoggedIn: boolean;
+  handleLoggedIn: (token: string) => void;
+}
 
-  const requireAuth = (component) => {
+function Main({ isLoggedIn, handleLoggedIn }: MainProps) {
+  const requireAuth = (component: React.ReactElement) => {
     return isLoggedIn ? component : <Navigate to="/login" />;
   };
 

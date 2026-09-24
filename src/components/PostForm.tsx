@@ -2,13 +2,13 @@ import React, { forwardRef } from "react";
 import { Form, Input, Upload } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 
-export const PostForm = forwardRef((props, formRef) => {
+export const PostForm = forwardRef<any>(function PostForm(_, formRef) {
   const formItemLayout = {
     labelCol: { span: 6 },
     wrapperCol: { span: 14 },
   };
 
-  const normFile = (e) => (Array.isArray(e) ? e : e && e.fileList);
+  const normFile = (e: any): any => (Array.isArray(e) ? e : e?.fileList);
 
   return (
     <Form name="validate_other" {...formItemLayout} ref={formRef}>

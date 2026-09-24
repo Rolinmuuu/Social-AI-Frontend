@@ -51,9 +51,18 @@
     ]
   },
   "devDependencies": {
-    "@types/node": "^25.5.2",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.19.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^6.0.2"
+    "typescript": "^4.9.5"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^@rc-component/([^/]+)/(?!lib/|es/|assets/)(.+)$": "@rc-component/$1/lib/$2"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@ant-design|@rc-component|rc-[^/]+|antd|axios|react-photo-album|yet-another-react-lightbox)/)"
+    ]
   }
 }

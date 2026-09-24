@@ -3,11 +3,21 @@ import { Input, Button, List, message, Avatar } from "antd";
 import { SendOutlined, UserOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { BASE_URL, TOKEN_KEY } from "../constants";
+import type { CommentResponse } from "../types/model";
 
 const { TextArea } = Input;
 
-function CommentSection({ postId }) {
-  const [comments, setComments] = useState([]);
+interface LocalComment {
+  comment_id: string;
+  content: string;
+}
+
+interface CommentSectionProps {
+  postId: string;
+}
+
+function CommentSection({ postId }: CommentSectionProps) {
+  const [comments, setComments] = useState<LocalComment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -18,7 +28,7 @@ function CommentSection({ postId }) {
     }
     setSubmitting(true);
     axios
-      .post(
+      .post<CommentResponse>(
         `${BASE_URL}/post/${postId}/comment`,
         { content: newComment },
         {

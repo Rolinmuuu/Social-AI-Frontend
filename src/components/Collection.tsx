@@ -1,29 +1,32 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Tabs, message, Row, Col, Empty } from "antd";
-
 import SearchBar from "./SearchBar";
 import { SEARCH_KEY, BASE_URL, TOKEN_KEY } from "../constants";
+import type { SearchKeyType } from "../constants";
+import type { Post, SearchResponse } from "../types/model";
 import PostCard from "./PostCard";
 import CreatePostButton from "./CreatePostButton";
 
+interface SearchOption {
+  type: SearchKeyType;
+  keywords: string;
+}
+
 function Collection() {
-  const [searchOption, setSearchOption] = useState({
+  const [searchOption, setSearchOption] = useState<SearchOption>({
     type: SEARCH_KEY.all,
     keywords: "",
   });
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [activeTab, setActiveTab] = useState("image");
 
-  const handleSearch = (option) => {
+  const handleSearch = (option: SearchOption) => {
     setSearchOption(option);
   };
 
   useEffect(() => {
-    fetchPosts(searchOption);
-  }, [searchOption]);
-
-  const fetchPosts = ({ type, keywords }) => {
+    const { type, keywords } = searchOption;
     let url = `${BASE_URL}/search`;
 
     if (type === SEARCH_KEY.keywords && keywords) {
@@ -35,7 +38,7 @@ function Collection() {
     }
 
     axios
-      .get(url, {
+      .get<SearchResponse>(url, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
         },
@@ -48,13 +51,13 @@ function Collection() {
       .catch(() => {
         message.error("Failed to fetch posts, try again later");
       });
-  };
+  }, [searchOption]);
 
-  const handleDeletePost = (postId) => {
+  const handleDeletePost = (postId: string) => {
     setPosts((prev) => prev.filter((p) => p.post_id !== postId));
   };
 
-  const renderPosts = (type) => {
+  const renderPosts = (type: string) => {
     const filteredPosts = posts.filter((post) => post.type === type);
 
     if (!filteredPosts || filteredPosts.length === 0) {
@@ -72,7 +75,7 @@ function Collection() {
     );
   };
 
-  const showPost = (postType) => {
+  const showPost = (postType: string) => {
     setActiveTab(postType);
     setTimeout(() => {
       setSearchOption({ type: SEARCH_KEY.all, keywords: "" });
