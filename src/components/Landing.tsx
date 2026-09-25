@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { message, Button, Image, Input } from "antd";
 import { ThunderboltOutlined, ReloadOutlined, CompassOutlined } from "@ant-design/icons";
-import axios from "axios";
+import { postIdempotent } from "../lib/idempotent";
 import { BASE_URL, TOKEN_KEY } from "../constants";
 import type { Post } from "../types/model";
 
@@ -26,14 +26,14 @@ function Landing() {
     setIsGenerating(true);
     setGeneratedPost(null);
     try {
-      const response = await axios.post<Post>(
+      // Generation is slow and billed per call: if the connection drops, retry with the same
+      // Idempotency-Key so the server returns the first image instead of making a second one.
+      const response = await postIdempotent<Post>(
         `${BASE_URL}/post/generate-image-from-openai`,
         { prompt },
         {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
-            "Content-Type": "application/json",
-          },
+          Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
+          "Content-Type": "application/json",
         },
       );
       if (response.status === 200 || response.status === 201) {

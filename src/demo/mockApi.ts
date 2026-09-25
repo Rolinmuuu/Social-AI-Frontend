@@ -15,7 +15,14 @@ const state = {
   users: new Map<string, string>([["demo", "demo"]]),
   nextId: 1000,
   generated: 0,
+  // Idempotency-Key -> stored response, as the backend keeps it (per user).
+  replays: new Map<string, { status: number; data: unknown }>(),
 };
+
+function idempotencyKey(config: InternalAxiosRequestConfig, user: string): string | null {
+  const k = config.headers?.["Idempotency-Key"] || config.headers?.["idempotency-key"];
+  return k ? `${user}:${String(k)}` : null;
+}
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -119,6 +126,15 @@ async function handle(config: InternalAxiosRequestConfig): Promise<AxiosResponse
     return respond(config, 200, { posts });
   }
 
+  // Like the backend: a retried create with the same Idempotency-Key replays the first result.
+  const idemKey = method === "post" && /\/(upload|generate-image-from-openai)$/.test(path) ? idempotencyKey(config, user) : null;
+  const replay = idemKey ? state.replays.get(idemKey) : undefined;
+  if (replay) return respond(config, replay.status, replay.data);
+  const remember = (status: number, data: unknown) => {
+    if (idemKey) state.replays.set(idemKey, { status, data });
+    return respond(config, status, data);
+  };
+
   if (method === "post" && path.endsWith("/upload")) {
     const form = config.data as FormData;
     const file = form?.get?.("media_file") as File | null;
@@ -138,7 +154,7 @@ async function handle(config: InternalAxiosRequestConfig): Promise<AxiosResponse
       created_at: Date.now(),
     };
     state.posts.unshift(post);
-    return respond(config, 201, { post_id: post.post_id });
+    return remember(201, { post_id: post.post_id });
   }
 
   if (method === "post" && path.endsWith("/generate-image-from-openai")) {
@@ -158,7 +174,7 @@ async function handle(config: InternalAxiosRequestConfig): Promise<AxiosResponse
       created_at: Date.now(),
     };
     state.posts.unshift(post);
-    return respond(config, 201, post);
+    return remember(201, post);
   }
 
   const m = path.match(/\/post\/([^/]+)(?:\/(like|share|comment))?$/);

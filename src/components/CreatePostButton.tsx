@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { Modal, Button, message } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import type { FormInstance } from "antd";
-import axios from "axios";
+import { postIdempotent } from "../lib/idempotent";
 import { PostForm } from "./PostForm";
 import { BASE_URL, TOKEN_KEY } from "../constants";
 
@@ -29,12 +29,10 @@ function CreatePostButton({ onShowPost }: CreatePostButtonProps) {
           formData.append("message", description);
           formData.append("media_file", originFileObj);
 
-          axios
-            .post(`${BASE_URL}/upload`, formData, {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
-              },
-            })
+          // Retried with one Idempotency-Key: a dropped connection never creates the post twice.
+          postIdempotent(`${BASE_URL}/upload`, formData, {
+            Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
+          })
             .then((response) => {
               if (response.status === 200 || response.status === 201) {
                 message.success("Post created successfully");

@@ -23,6 +23,9 @@ and two short loops) is drawn from code in `scripts/demo-art/`; the users and ca
 - **Create**: describe an image, the backend generates it with DALL·E 3 and publishes it; example prompts and a three-step explainer
 - **Explore**: masonry feed of image and video posts, with a search panel for all posts, caption keywords, one user, or semantic (embedding) search
 - New post modal with image / video upload
+- Safe retries: uploads and image generation send one `Idempotency-Key` per action and retry
+  network errors / `409` with the same key, so a dropped connection never creates a post twice
+  (the backend replays the first result; `src/lib/idempotent.ts`, 4 tests)
 - Post cards with author avatar, like, share, comments (written this session; the API has no comment-list endpoint yet) and delete with confirmation (the backend only lets authors delete)
 - Loading skeletons, empty states, responsive down to phone width
 

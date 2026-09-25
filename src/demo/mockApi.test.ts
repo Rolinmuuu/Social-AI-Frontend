@@ -34,3 +34,13 @@ test("the demo API enforces auth, author-only delete and one like per user", asy
     response: { status: 409 },
   });
 });
+
+test("a retried generation with the same Idempotency-Key replays the first post", async () => {
+  const headers = { Authorization: "Bearer demo.bob", "Idempotency-Key": "k-1" };
+  const before = (await axios.get("http://x/search", auth("bob"))).data.posts.length;
+  const first = await axios.post("http://x/post/generate-image-from-openai", { prompt: "a cat" }, { headers });
+  const retry = await axios.post("http://x/post/generate-image-from-openai", { prompt: "a cat" }, { headers });
+  expect(retry.data.post_id).toBe(first.data.post_id);
+  const after = (await axios.get("http://x/search", auth("bob"))).data.posts.length;
+  expect(after).toBe(before + 1);
+}, 10000);
