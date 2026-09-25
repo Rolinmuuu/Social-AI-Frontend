@@ -6,6 +6,7 @@ import axios from "axios";
 import { BASE_URL } from "../constants";
 import type { SigninResponse } from "../types/model";
 import AuthLayout from "./AuthLayout";
+import { DEMO } from "../demo/mockApi";
 
 interface LoginProps {
   handleLoggedIn: (token: string) => void;
@@ -35,6 +36,7 @@ function Login({ handleLoggedIn }: LoginProps) {
 
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to create, search and share.">
+      {DEMO && <p className="demo-hint">Demo: sign in with any username and password.</p>}
       <Form name="login" layout="vertical" requiredMark={false} onFinish={onFinish} size="large">
         <Form.Item name="username" label="Username" rules={[{ required: true, message: "Please enter your username" }]}>
           <Input prefix={<UserOutlined />} placeholder="your-username" autoComplete="username" />

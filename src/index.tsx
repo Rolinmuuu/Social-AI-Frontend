@@ -1,10 +1,21 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { ConfigProvider } from "antd";
+import "@fontsource/plus-jakarta-sans/400.css";
+import "@fontsource/plus-jakarta-sans/500.css";
+import "@fontsource/plus-jakarta-sans/600.css";
+import "@fontsource/plus-jakarta-sans/700.css";
+import "@fontsource/plus-jakarta-sans/800.css";
 import "./styles/index.css";
 import App from "./components/App";
 import reportWebVitals from "./reportWebVitals";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, HashRouter } from "react-router-dom";
+import { DEMO, installDemoApi } from "./demo/mockApi";
+
+// Demo build (GitHub Pages): answer API calls in the browser and use hash routing,
+// since a static host cannot rewrite deep links to index.html.
+if (DEMO) installDemoApi();
+const Router = DEMO ? HashRouter : BrowserRouter;
 
 const theme = {
   token: {
@@ -26,11 +37,11 @@ const theme = {
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
-  <BrowserRouter>
+  <Router>
     <ConfigProvider theme={theme}>
       <App />
     </ConfigProvider>
-  </BrowserRouter>,
+  </Router>,
 );
 
 reportWebVitals();
