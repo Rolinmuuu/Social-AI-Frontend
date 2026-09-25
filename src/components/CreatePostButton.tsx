@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Modal, Button, message } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import type { FormInstance } from "antd";
 import axios from "axios";
 import { PostForm } from "./PostForm";
@@ -60,14 +61,14 @@ function CreatePostButton({ onShowPost }: CreatePostButtonProps) {
 
   return (
     <div>
-      <Button type="primary" onClick={() => setVisible(true)}>
-        Create New Post
+      <Button type="primary" shape="round" size="large" icon={<PlusOutlined />} onClick={() => setVisible(true)}>
+        New post
       </Button>
       <Modal
-        title="Create New Post"
+        title="New post"
         open={visible}
         onOk={handleOk}
-        okText="Create"
+        okText="Publish"
         onCancel={() => setVisible(false)}
         confirmLoading={confirmLoading}
       >

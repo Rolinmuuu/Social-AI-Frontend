@@ -1,57 +1,26 @@
 import React, { useState } from "react";
-import styled from "styled-components";
-import Typography from "@mui/material/Typography";
-import Paper from "@mui/material/Paper";
-import InputBase from "@mui/material/InputBase";
-import IconButton from "@mui/material/IconButton";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { message, Card, Image, Button } from "antd";
+import { message, Button, Image, Input } from "antd";
+import { ThunderboltOutlined, ReloadOutlined, CompassOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { BASE_URL, TOKEN_KEY } from "../constants";
 import type { Post } from "../types/model";
 
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
-
-const MainContainer = styled.div`
-  background-color: #27272a;
-  height: 100%;
-  min-height: 100vh;
-`;
-
-const HeaderContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const ResultContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  padding: 0 16px 64px;
-`;
+const EXAMPLES = [
+  "A lighthouse on a cliff at golden hour, watercolor",
+  "Isometric tiny coffee shop with plants, soft pastel 3D",
+  "A fox reading a book under a paper lantern, warm storybook style",
+];
 
 function Landing() {
-  const [inputValue, setInputValue] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPost, setGeneratedPost] = useState<Post | null>(null);
   const navigate = useNavigate();
 
   const handleGenerate = async () => {
-    if (!inputValue.trim()) {
-      message.warning("Please enter a description");
+    if (!prompt.trim()) {
+      message.warning("Describe the image you want first");
       return;
     }
     setIsGenerating(true);
@@ -59,7 +28,7 @@ function Landing() {
     try {
       const response = await axios.post<Post>(
         `${BASE_URL}/post/generate-image-from-openai`,
-        { prompt: inputValue },
+        { prompt },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY)}`,
@@ -69,118 +38,118 @@ function Landing() {
       );
       if (response.status === 200 || response.status === 201) {
         setGeneratedPost(response.data);
-        message.success("Image generated and published!");
+        message.success("Image generated and published");
       }
     } catch {
-      message.error("Failed to generate image, please try again");
+      message.error("Image generation failed, please try again");
     } finally {
       setIsGenerating(false);
     }
   };
 
   return (
-    <MainContainer>
-      {isGenerating && (
-        <Overlay>
-          <CircularProgress color="info" size={100} />
-        </Overlay>
-      )}
-      <HeaderContainer>
-        <Typography
-          variant="h1"
-          fontSize="5.2rem"
-          marginTop="128px"
-          noWrap
-          component="div"
-          sx={{ fontFamily: "Roboto", color: "white" }}
-        >
-          Social AI
-        </Typography>
+    <div className="page create-page">
+      <section className="create-hero">
+        <p className="eyebrow">Create with AI</p>
+        <h1>
+          Turn an idea into a <span className="grad-text">post</span>.
+        </h1>
+        <p className="lead">Describe a picture. DALL·E 3 draws it, and it is published to your collection right away.</p>
 
-        <Typography
-          variant="h5"
-          fontSize="1.2rem"
-          component="div"
-          sx={{
-            fontFamily: "Roboto",
-            color: "white",
-            margin: "0 20px",
-            textAlign: "center",
-          }}
-        >
-          Unleash Creativity, Share Memories—Where AI Meets Your Imagination!
-        </Typography>
-
-        <Paper
-          component="form"
-          onSubmit={(e: React.FormEvent) => {
+        <form
+          className="prompt-card"
+          onSubmit={(e) => {
             e.preventDefault();
             handleGenerate();
           }}
-          sx={{
-            p: "2px 4px",
-            display: "flex",
-            alignItems: "center",
-            width: "80%",
-            maxWidth: "600px",
-            borderRadius: "10px",
-            marginTop: "32px",
-            marginBottom: "64px",
-          }}
         >
-          <InputBase
-            multiline
-            sx={{ ml: 1, flex: 1 }}
-            placeholder="Enter a detailed description of the photo you want to create..."
-            inputProps={{ "aria-label": "prompt" }}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+          <Input.TextArea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            autoSize={{ minRows: 2, maxRows: 5 }}
+            placeholder="A detailed description of the image you want to create…"
+            aria-label="Image prompt"
+            variant="borderless"
+            onPressEnter={(e) => {
+              if (!e.shiftKey) {
+                e.preventDefault();
+                handleGenerate();
+              }
+            }}
           />
-          <IconButton type="submit" sx={{ p: "10px" }} disabled={isGenerating}>
-            <ArrowForwardIcon />
-          </IconButton>
-        </Paper>
-      </HeaderContainer>
+          <div className="prompt-foot">
+            <div className="chips">
+              {EXAMPLES.map((ex) => (
+                <button type="button" key={ex} className="chip" onClick={() => setPrompt(ex)}>
+                  {ex}
+                </button>
+              ))}
+            </div>
+            <Button type="primary" htmlType="submit" size="large" icon={<ThunderboltOutlined />} loading={isGenerating} className="grad-btn">
+              Generate
+            </Button>
+          </div>
+        </form>
+      </section>
 
-      {generatedPost && (
-        <ResultContainer>
-          <Card
-            style={{ maxWidth: 600, width: "100%", borderRadius: 12 }}
-            cover={
-              <Image
-                alt={generatedPost.message}
-                src={generatedPost.url}
-                style={{ maxHeight: 512, objectFit: "contain" }}
-              />
-            }
-            actions={[
-              <Button
-                key="collection"
-                type="link"
-                onClick={() => navigate("/collection")}
-              >
-                View in Collection
-              </Button>,
-              <Button
-                key="new"
-                type="link"
-                onClick={() => {
-                  setGeneratedPost(null);
-                  setInputValue("");
-                }}
-              >
-                Generate Another
-              </Button>,
-            ]}
-          >
-            <Card.Meta
-              title="AI Generated Image"
-              description={generatedPost.message}
-            />
-          </Card>
-        </ResultContainer>
+      {!isGenerating && !generatedPost && (
+        <ol className="steps">
+          <li>
+            <span>1</span>
+            <strong>Describe it</strong>
+            <em>Subject, setting, light and style all help.</em>
+          </li>
+          <li>
+            <span>2</span>
+            <strong>DALL·E 3 draws it</strong>
+            <em>The image is generated on the server with your prompt.</em>
+          </li>
+          <li>
+            <span>3</span>
+            <strong>It is posted</strong>
+            <em>The result lands in Explore, ready to like, share and search.</em>
+          </li>
+        </ol>
       )}
-    </MainContainer>
+
+      {(isGenerating || generatedPost) && (
+        <section className="result">
+          {isGenerating ? (
+            <div className="result-card generating" aria-live="polite">
+              <div className="shimmer" />
+              <div className="result-body">
+                <strong>Generating…</strong>
+                <span className="muted">DALL·E 3 is drawing your image. It is published as soon as it is ready.</span>
+              </div>
+            </div>
+          ) : (
+            generatedPost && (
+              <div className="result-card">
+                <Image src={generatedPost.url} alt={generatedPost.message} className="result-image" />
+                <div className="result-body">
+                  <p className="result-caption">{generatedPost.message}</p>
+                  <div className="result-actions">
+                    <Button icon={<CompassOutlined />} onClick={() => navigate("/collection")}>
+                      View in Explore
+                    </Button>
+                    <Button
+                      type="text"
+                      icon={<ReloadOutlined />}
+                      onClick={() => {
+                        setGeneratedPost(null);
+                        setPrompt("");
+                      }}
+                    >
+                      Generate another
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+        </section>
+      )}
+    </div>
   );
 }
 
