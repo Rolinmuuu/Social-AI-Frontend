@@ -3,14 +3,44 @@
 // Go gateway serves, with the same status codes, so the UI code is identical in both modes.
 import axios, { AxiosError } from "axios";
 import type { AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import { SAMPLE_POSTS, RELATED } from "./data";
+import { SAMPLE_POSTS, SAMPLE_COMMENTS, RELATED } from "./data";
 import type { DemoPost } from "./data";
+import type { Comment } from "../types/model";
 
 export const DEMO = process.env.REACT_APP_DEMO === "true";
 const TOKEN_PREFIX = "demo.";
 
+const nowSec = () => Math.floor(Date.now() / 1000);
+
+function seedComments(): Map<string, Comment[]> {
+  const out = new Map<string, Comment[]>();
+  let n = 0;
+  Object.entries(SAMPLE_COMMENTS).forEach(([postId, list]) => {
+    out.set(
+      postId,
+      list.map((c, i) => {
+        const id = `seed-${++n}`;
+        return {
+          comment_id: id,
+          parent_comment_id: "",
+          root_comment_id: id,
+          user_id: c.user,
+          post_id: postId,
+          depth: 0,
+          content: c.content,
+          created_at: nowSec() - (list.length - i) * 600,
+          deleted: false,
+          deleted_at: 0,
+        };
+      }),
+    );
+  });
+  return out;
+}
+
 const state = {
   posts: SAMPLE_POSTS.map((p) => ({ ...p })),
+  comments: seedComments(), // post id -> comments, oldest first
   likes: new Set<string>(), // `${user}:${postId}`
   users: new Map<string, string>([["demo", "demo"]]),
   nextId: 1000,
@@ -151,7 +181,7 @@ async function handle(config: InternalAxiosRequestConfig): Promise<AxiosResponse
       like_count: 0,
       shared_count: 0,
       tags: words(caption),
-      created_at: Date.now(),
+      created_at: nowSec(),
     };
     state.posts.unshift(post);
     return remember(201, { post_id: post.post_id });
@@ -171,13 +201,13 @@ async function handle(config: InternalAxiosRequestConfig): Promise<AxiosResponse
       like_count: 0,
       shared_count: 0,
       tags: [...source.tags, ...words(prompt)],
-      created_at: Date.now(),
+      created_at: nowSec(),
     };
     state.posts.unshift(post);
     return remember(201, post);
   }
 
-  const m = path.match(/\/post\/([^/]+)(?:\/(like|share|comment))?$/);
+  const m = path.match(/\/post\/([^/]+)(?:\/(like|share|comment|comments))?$/);
   if (m) {
     const target = state.posts.find((p) => p.post_id === m[1] && !p.deleted);
     if (!target) return respond(config, 404, "post not found");
@@ -195,12 +225,53 @@ async function handle(config: InternalAxiosRequestConfig): Promise<AxiosResponse
       target.like_count += 1;
       return respond(config, 200, "liked");
     }
+    if (method === "delete" && action === "like") {
+      const key = `${user}:${target.post_id}`;
+      if (!state.likes.delete(key)) return respond(config, 404, "post not liked");
+      target.like_count -= 1;
+      return respond(config, 200, "like removed");
+    }
     if (method === "post" && action === "share") {
       target.shared_count += 1;
       return respond(config, 200, "shared");
     }
     if (method === "post" && action === "comment") {
-      return respond(config, 201, { comment_id: `c-${state.nextId++}` });
+      const { content } = parseBody(config);
+      if (!content || String(content).length > 2000) return respond(config, 400, "comment must be 1-2000 characters");
+      const id = `c-${state.nextId++}`;
+      const list = state.comments.get(target.post_id) || [];
+      list.push({
+        comment_id: id,
+        parent_comment_id: "",
+        root_comment_id: id,
+        user_id: user,
+        post_id: target.post_id,
+        depth: 0,
+        content: String(content),
+        created_at: nowSec(),
+        deleted: false,
+        deleted_at: 0,
+      });
+      state.comments.set(target.post_id, list);
+      return respond(config, 201, { comment_id: id });
+    }
+    if (method === "get" && action === "comments") {
+      // Same contract as the backend: oldest first, an opaque cursor, none on the last page.
+      const all = state.comments.get(target.post_id) || [];
+      const limit = Math.min(Math.max(Number(url.searchParams.get("limit")) || 50, 1), 200);
+      const cursor = url.searchParams.get("cursor");
+      let start = 0;
+      if (cursor) {
+        try {
+          start = Number(atob(cursor));
+        } catch {
+          start = NaN;
+        }
+        if (!Number.isInteger(start) || start < 0) return respond(config, 400, "invalid cursor");
+      }
+      const comments = all.slice(start, start + limit);
+      const next = start + limit < all.length ? btoa(String(start + limit)) : undefined;
+      return respond(config, 200, next ? { comments, next_cursor: next } : { comments });
     }
   }
 

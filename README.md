@@ -26,7 +26,7 @@ and two short loops) is drawn from code in `scripts/demo-art/`; the users and ca
 - Safe retries: uploads and image generation send one `Idempotency-Key` per action and retry
   network errors / `409` with the same key, so a dropped connection never creates a post twice
   (the backend replays the first result; `src/lib/idempotent.ts`, 4 tests)
-- Post cards with author avatar, like, share, comments (written this session; the API has no comment-list endpoint yet) and delete with confirmation (the backend only lets authors delete)
+- Post cards with author avatar, like, share, comments (loaded a page at a time from `GET /post/{id}/comments`, your own labelled "You") and delete with confirmation (the backend only lets authors delete)
 - Loading skeletons, empty states, responsive down to phone width
 
 Built with React 19, TypeScript, Ant Design 6 (custom theme), React Router and self-hosted Plus Jakarta Sans.
@@ -47,7 +47,8 @@ REACT_APP_DEMO=true npm start      # UI with the in-browser mock API, no backend
 ```
 
 `src/demo/mockApi.ts` is an axios adapter that serves the same routes and status codes as the
-gateway — 401 without a token, 403 when deleting someone else's post, 409 on a second like — so
+gateway — 401 without a token, 403 when deleting someone else's post, 409 on a second like, keyset-paged
+comments — so
 components are identical in both modes. The demo uses hash routing because GitHub Pages cannot
 rewrite deep links. `.github/workflows/pages.yml` publishes it on every push to `main`
 (one-time setup: Settings → Pages → Source: GitHub Actions).

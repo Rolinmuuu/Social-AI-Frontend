@@ -29,3 +29,24 @@ if (typeof (globalThis as any).MessageChannel === "undefined") {
   }
   (globalThis as any).MessageChannel = MessageChannelPolyfill;
 }
+
+// jsdom has no ResizeObserver; antd's auto-sizing TextArea observes its own size.
+if (typeof (globalThis as any).ResizeObserver === "undefined") {
+  (globalThis as any).ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
+// jsdom's selector engine (nwsapi) throws on some of antd's CSS-in-JS rules while computing
+// styles; the auto-sizing TextArea calls getComputedStyle on every render. Fall back to an
+// empty style only when jsdom throws, so every other call behaves as before.
+const jsdomGetComputedStyle = window.getComputedStyle.bind(window);
+window.getComputedStyle = ((elt: Element, pseudo?: string | null) => {
+  try {
+    return jsdomGetComputedStyle(elt, pseudo);
+  } catch {
+    return { getPropertyValue: () => "" } as unknown as CSSStyleDeclaration;
+  }
+}) as typeof window.getComputedStyle;

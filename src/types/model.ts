@@ -9,12 +9,9 @@ export interface Post {
   type: string;
   deleted: boolean;
   deleted_at: number;
-  cleanup_status: string;
-  retry_count: number;
-  last_error: string;
   like_count: number;
   shared_count: number;
-  embedding?: number[];
+  created_at: number; // unix seconds
 }
 
 export interface User {
@@ -46,7 +43,9 @@ export interface Follow {
 }
 
 export interface Message {
-  message_id: string;
+  message_id: string; // "<conversation_id>:<seq>"
+  conversation_id: string;
+  seq: number; // gap-free order within the conversation
   sender_id: string;
   receiver_id: string;
   content: string;
@@ -83,6 +82,12 @@ export interface UploadResponse {
 
 export interface CommentResponse {
   comment_id: string;
+}
+
+// GET /post/{id}/comments — oldest first; next_cursor is absent on the last page.
+export interface CommentPage {
+  comments: Comment[];
+  next_cursor?: string;
 }
 
 export interface MessageResponse {

@@ -4,7 +4,6 @@ import type { Post } from "../types/model";
 
 export interface DemoPost extends Post {
   tags: string[];
-  created_at: number;
 }
 
 const img = (file: string) => `${process.env.PUBLIC_URL || ""}/demo/${file}`;
@@ -29,13 +28,10 @@ const post = (
     type,
     deleted: false,
     deleted_at: 0,
-    cleanup_status: "",
-    retry_count: 0,
-    last_error: "",
     like_count,
     shared_count,
     tags,
-    created_at: Date.now() - seq * 3_600_000,
+    created_at: Math.floor(Date.now() / 1000) - seq * 3600,
   };
 };
 
@@ -56,6 +52,20 @@ export const SAMPLE_POSTS: DemoPost[] = [
   post("kenji.dev", "synthwave-loop.mp4#t=0.1", "Looping the highway — 6 seconds of grid.", ["synthwave", "neon", "loop", "animation", "retro"], 77, 8, "video"),
   post("sam_ocean", "waves-loop.mp4#t=0.1", "The paper waves, animated.", ["ocean", "waves", "paper cut", "animation", "loop", "blue"], 49, 5, "video"),
 ];
+
+// A few existing comments, so opening a post's comments shows a conversation.
+export const SAMPLE_COMMENTS: Record<string, { user: string; content: string }[]> = {
+  "demo-10": [
+    { user: "sam_ocean", content: "Mochi has excellent taste in rugs." },
+    { user: "noor", content: "The little Zzz is perfect." },
+    { user: "maya_lin", content: "She has not moved in three hours." },
+  ],
+  "demo-6": [
+    { user: "atelier_k", content: "How many layers is this?" },
+    { user: "sam_ocean", content: "Seven, plus the tail." },
+  ],
+  "demo-8": [{ user: "orbit.lab", content: "Need this as a wallpaper." }],
+};
 
 // A small synonym map so "semantic" search in the demo behaves like meaning-based search
 // (the real backend compares embeddings; the demo has no model, so it expands the query).
